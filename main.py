@@ -5,7 +5,7 @@ import threading
 from utils import *
 
 
-def main(video_path, contours, warning_level=200, is_visualized=False):
+def main(video_path, contours, is_visualized=False):
     cap = cv2.VideoCapture(video_path)
     frame_per_second = cap.get(cv2.CAP_PROP_FPS)
 
@@ -23,7 +23,7 @@ def main(video_path, contours, warning_level=200, is_visualized=False):
             pool.append(
                 threading.Thread(
                     target = check, 
-                    args = (frame, contours, contour_index, warning_level, is_visualized)
+                    args = (frame, contours, contour_index, is_visualized)
                 )
             )
         for t in pool:
@@ -42,7 +42,7 @@ def main(video_path, contours, warning_level=200, is_visualized=False):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, (0, 0, 255), 2
                 )
-                text = ' | '.join([f'{k}: {round(v, 1)}' for k, v in val['result']['values'].items()])
+                text = ' | '.join([f'{k}: {round(v, 4)}' for k, v in val['result']['values'].items()])
                 cv2.putText(
                     frame, text, (test_pos_x, test_pos_y+60),
                     cv2.FONT_HERSHEY_SIMPLEX,
@@ -59,11 +59,34 @@ def main(video_path, contours, warning_level=200, is_visualized=False):
 
 if __name__ == '__main__':
     contours = [
-        np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
-        # np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
-        # np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
+        {
+            'contour': np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
+            'bounds': {
+                'mean': (200, 255),
+                'std': (),
+                'median': (),
+            },
+            'warnings': {
+                'mean': 0.15,
+                'std': 0,
+                'median': 0,
+            },
+        },
+        # {
+        #     'contour': np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
+        #     'bounds': {
+        #         'mean': (200, 255),
+        #         'std': (),
+        #         'median': (),
+        #     },
+        #     'warnings': {
+        #         'mean': 0.15,
+        #         'std': 0,
+        #         'median': 0,
+        #     },
+        # },
     ]
-    contours = {i: {'contour': cnt} for i, cnt in enumerate(contours)}
+    contours = {i: v for i, v in enumerate(contours)}
     main(
         video_path = '2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc.mp4',
         contours = contours,

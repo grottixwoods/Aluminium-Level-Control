@@ -60,20 +60,29 @@ def quantization(img, clusters=8, rounds=1):
 
 
 def warning(warning_level):
-    print(f'[WARNING]: Level > {warning_level}')
+    print(f'[WARNING]: Exceeding the level')
 
-def check(img, cnts, cnt_idx, warning_level, is_visualized=False):
+def check(img, cnts, cnt_idx, is_visualized=False):
     cnt = cnts[cnt_idx]['contour']
+    bnds = cnts[cnt_idx]['bounds']
+    wrns = cnts[cnt_idx]['warnings']
+
     rotated = rotate(img, cnt)
     # cells = cell_split(rotated, rows, cols)
 
-    mean_val = rotated.mean()
+    _mean_val = rotated.mean()
+    _std_val = 0
+    _median_val = 0
+
+    mean_val = (_mean_val - bnds['mean'][0]) / (bnds['mean'][1] - bnds['mean'][0])
     std_val = 0
     median_val = 0
 
-    is_warning = mean_val >= warning_level
+    is_warning = mean_val >= wrns['mean'] and \
+        std_val >= wrns['std'] and \
+        median_val >= wrns['median']
     if is_warning:
-        warning(warning_level)
+        warning()
 
     cnts[cnt_idx]['result'] = {
         'state': is_warning,
