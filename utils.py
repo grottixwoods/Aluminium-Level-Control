@@ -59,7 +59,7 @@ def quantization(img, clusters=8, rounds=1):
     return res.reshape((img.shape))
 
 
-def warning(warning_level):
+def warning():
     print(f'[WARNING]: Exceeding the level')
 
 def check(img, cnts, cnt_idx, is_visualized=False):

@@ -49,9 +49,9 @@ def main(video_path, contours, is_visualized=False):
                     1, (0, 0, 255), 2
                 )
                 cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
-                cv2.imshow('Frame', frame)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    raise KeyboardInterrupt
+            cv2.imshow('Frame', frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
     cap.release()
     cv2.destroyAllWindows()
