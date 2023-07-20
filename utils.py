@@ -1,15 +1,11 @@
 import cv2
 import numpy as np
 
-video_path = '123.mp4'
 
-text_pos = (685, 740)
-contour = np.array([[685, 645], [980, 610], [980, 680], [710, 710]])
-
-def crop(image, pts):
-    mask = np.zeros(image.shape[0:2], dtype=np.uint8)
+def crop(img, pts):
+    mask = np.zeros(img.shape[0:2], dtype=np.uint8)
     cv2.drawContours(mask, [pts], -1, (255, 255, 255), -1, cv2.LINE_AA)
-    res = cv2.bitwise_and(image, image, mask = mask)
+    res = cv2.bitwise_and(img, img, mask = mask)
     rect = cv2.boundingRect(pts)
     cropped = res[rect[1]: rect[1] + rect[3], rect[0]: rect[0] + rect[2]]
     return cropped
@@ -24,7 +20,7 @@ def order_points(pts):
     rect[3] = pts[np.argmax(diff)]
     return rect
 
-def rotate(image, pts):
+def rotate(img, pts):
 	rect = order_points(pts)
 	(tl, tr, br, bl) = rect
 	widthA = np.sqrt(((br[0] - bl[0]) ** 2) + ((br[1] - bl[1]) ** 2))
@@ -39,16 +35,16 @@ def rotate(image, pts):
 		[maxWidth - 1, maxHeight - 1],
 		[0, maxHeight - 1]], dtype = "float32")
 	M = cv2.getPerspectiveTransform(rect, dst)
-	warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
+	warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
 	return warped
     
-def quantization(image, clusters=8, rounds=1):
-    h, w = image.shape[:2]
+def quantization(img, clusters=8, rounds=1):
+    h, w = img.shape[:2]
     samples = np.zeros([h*w, 3], dtype=np.float32)
     count = 0
     for x in range(h):
         for y in range(w):
-            samples[count] = image[x][y]
+            samples[count] = img[x][y]
             count += 1
     compactness, labels, centers = cv2.kmeans(
     samples,
@@ -60,4 +56,7 @@ def quantization(image, clusters=8, rounds=1):
     )
     centers = np.uint8(centers)
     res = centers[labels.flatten()]
-    return res.reshape((image.shape))
+    return res.reshape((img.shape))
+
+def warning(warning_level):
+    print(f'[WARNING]: Level > {warning_level}')
