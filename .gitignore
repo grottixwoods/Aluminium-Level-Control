@@ -1,3 +1,4 @@
 /myenv
-/123.mp4
+/.venv
 /__pycache__
+*.mp4
