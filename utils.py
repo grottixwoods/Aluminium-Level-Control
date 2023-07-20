@@ -47,12 +47,12 @@ def quantization(img, clusters=8, rounds=1):
             samples[count] = img[x][y]
             count += 1
     compactness, labels, centers = cv2.kmeans(
-    samples,
-    clusters,
-    None,
-    (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10000, 0.0001),
-    rounds,
-    cv2.KMEANS_PP_CENTERS
+        samples,
+        clusters,
+        None,
+        (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10000, 0.0001),
+        rounds,
+        cv2.KMEANS_PP_CENTERS
     )
     centers = np.uint8(centers)
     res = centers[labels.flatten()]
@@ -62,7 +62,7 @@ def quantization(img, clusters=8, rounds=1):
 def warning():
     print(f'[WARNING]: Exceeding the level')
 
-def check(img, cnts, cnt_idx, is_visualized=False):
+def check(img, cnts, cnt_idx):
     cnt = cnts[cnt_idx]['contour']
     bnds = cnts[cnt_idx]['bounds']
     wrns = cnts[cnt_idx]['warnings']
@@ -85,7 +85,7 @@ def check(img, cnts, cnt_idx, is_visualized=False):
         warning()
 
     cnts[cnt_idx]['result'] = {
-        'state': is_warning,
+        'is_warning': is_warning,
         'values': {
             'mean': mean_val,
             'std': std_val,
