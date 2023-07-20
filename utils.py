@@ -58,5 +58,28 @@ def quantization(img, clusters=8, rounds=1):
     res = centers[labels.flatten()]
     return res.reshape((img.shape))
 
+
 def warning(warning_level):
     print(f'[WARNING]: Level > {warning_level}')
+
+def check(img, cnts, cnt_idx, warning_level, is_visualized=False):
+    cnt = cnts[cnt_idx]['contour']
+    rotated = rotate(img, cnt)
+    # cells = cell_split(rotated, rows, cols)
+
+    mean_val = rotated.mean()
+    std_val = 0
+    median_val = 0
+
+    is_warning = mean_val >= warning_level
+    if is_warning:
+        warning(warning_level)
+
+    cnts[cnt_idx]['result'] = {
+        'state': is_warning,
+        'values': {
+            'mean': mean_val,
+            'std': std_val,
+            'median': median_val,
+        }
+    }

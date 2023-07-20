@@ -1,12 +1,11 @@
 import cv2
 import numpy as np
+import threading
 
 from utils import *
 
 
-def main(video_path, contour, warning_level=200, is_visualized=False):
-    text_pos = (685, 740) # contour.min(0), contour.max(1) + 30
-
+def main(video_path, contours, warning_level=200, is_visualized=False):
     cap = cv2.VideoCapture(video_path)
     frame_per_second = cap.get(cv2.CAP_PROP_FPS)
 
@@ -19,34 +18,55 @@ def main(video_path, contour, warning_level=200, is_visualized=False):
         if not is_next:
             break
 
-        image = frame # copy?
-        rotated = rotate(image, contour)
-        # cv2.imshow('Rotated', rotated)
-        # cells = cell_split(rotated, rows, cols)
-
-        mean_color = rotated.mean()
-        if mean_color >= warning_level:
-            warning(warning_level)
+        pool = []
+        for contour_index in contours.keys():
+            pool.append(
+                threading.Thread(
+                    target = check, 
+                    args = (frame, contours, contour_index, warning_level, is_visualized)
+                )
+            )
+        for t in pool:
+            t.start()
+        for t in pool:
+            t.join()
 
         if is_visualized:
-            cv2.putText(
-                image,
-                f's: {frame_cur//frame_per_second} | mean_color: {round(mean_color, 2)}',
-                text_pos, cv2.FONT_HERSHEY_SIMPLEX,
-                1, (0, 255, 0), 2
-            )
-            cv2.drawContours(image, [contour], 0, (0, 255, 0), 1)
-            cv2.imshow('Image', image)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
+            for contour_index, val in contours.items():
+                contour = val['contour']
+                test_pos_x = contour[:, 0].min()
+                test_pos_y = contour[:, 1].max()
+                text = f'{contour_index} is warning: {val["result"]["state"]}'
+                cv2.putText(
+                    frame, text, (test_pos_x, test_pos_y+30),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 0, 255), 2
+                )
+                text = ' | '.join([f'{k}: {round(v, 1)}' for k, v in val['result']['values'].items()])
+                cv2.putText(
+                    frame, text, (test_pos_x, test_pos_y+60),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (0, 0, 255), 2
+                )
+                cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
+                cv2.imshow('Image', frame)
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    raise KeyboardInterrupt
 
     cap.release()
+    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
+    contours = [
+        np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
+        # np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
+        # np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
+    ]
+    contours = {i: {'contour': cnt} for i, cnt in enumerate(contours)}
     main(
         video_path = '2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc.mp4',
-        contour = np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
+        contours = contours,
         is_visualized = True,
     )
 
