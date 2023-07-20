@@ -40,7 +40,7 @@ def main(video_path, contour, warning_level=200, is_visualized=False):
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
 
-        cap.release()
+    cap.release()
 
 
 if __name__ == '__main__':
