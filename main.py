@@ -49,7 +49,7 @@ def main(video_path, contours, is_visualized=False):
                     1, (0, 0, 255), 2
                 )
                 cv2.drawContours(frame, [contour], 0, (0, 0, 255), 2)
-                cv2.imshow('Image', frame)
+                cv2.imshow('Frame', frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
                     raise KeyboardInterrupt
 
@@ -72,19 +72,32 @@ if __name__ == '__main__':
                 'median': 0,
             },
         },
-        # {
-        #     'contour': np.array([[685, 645], [980, 610], [980, 680], [710, 710]]),
-        #     'bounds': {
-        #         'mean': (200, 255),
-        #         'std': (),
-        #         'median': (),
-        #     },
-        #     'warnings': {
-        #         'mean': 0.15,
-        #         'std': 0,
-        #         'median': 0,
-        #     },
-        # },
+        {
+            'contour': np.array([[1155, 660], [1412, 625], [1412, 677], [1162, 715]]),
+            'bounds': {
+                'mean': (200, 255),
+                'std': (),
+                'median': (),
+            },
+            'warnings': {
+                'mean': 0.15,
+                'std': 0,
+                'median': 0,
+            },
+        },
+        {
+            'contour': np.array([[262, 414], [492, 375], [497, 400], [267, 435]]),
+            'bounds': {
+                'mean': (200, 255),
+                'std': (),
+                'median': (),
+            },
+            'warnings': {
+                'mean': 0.15,
+                'std': 0,
+                'median': 0,
+            },
+        },
     ]
     contours = {i: v for i, v in enumerate(contours)}
     main(
