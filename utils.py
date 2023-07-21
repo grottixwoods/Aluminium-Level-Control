@@ -97,31 +97,54 @@ def overall_statistics(stats_element): # общая для cv.putText()
     }
 
 def detect_outliers_in_rows(stats_element):
-    row_warnings = {}
-    sorted_items = sorted(stats_element.items(), key=lambda item: item[0][0])
     grouped_rows = {}
-    for coords, stats in sorted_items:
-        row_idx = coords[0]
-        if row_idx not in grouped_rows:
-            grouped_rows[row_idx] = []
-        grouped_rows[row_idx].append((coords, stats))
-    for row_idx, row_elements in grouped_rows.items():
-        median_values = [stats[2] for _, stats in row_elements]
-        median_median = np.median(median_values)
-        threshold = 2 * median_median
-        for (coords, stats) in row_elements:
-            median_val = stats[2]
-            if abs(median_val - median_median) > threshold:
-                if row_idx not in row_warnings:
-                    row_warnings[row_idx] = []
-                row_warnings[row_idx].append(coords)
-    return row_warnings
+    for coord, values in stats_element.items():
+        x_coord = coord[0]
+        if x_coord not in grouped_rows:
+            grouped_rows[x_coord] = []
+        grouped_rows[x_coord].append((coord, values))
+
+    def find_and_normalize_outliers(row):
+        mean_values = [value[0] for _, value in row]
+        std_values = [value[1] for _, value in row]
+        median_values = [value[2] for _, value in row]
+        mean_mean = sum(mean_values) / len(mean_values)
+        mean_std = sum(std_values) / len(std_values)
+        mean_median = sum(median_values) / len(median_values)
+        outlier_coord = None
+
+        for coord, values in row:
+            if (
+                values[0] > (mean_mean + mean_std) * 1.5
+                or values[1] > (mean_std + mean_std) * 1.5
+                or values[2] > (mean_median + mean_std) * 1.5
+            ):
+                outlier_coord = coord
+                break
+
+        if outlier_coord:
+            outlier_mean, outlier_std, outlier_median = stats_element[outlier_coord]
+            stats_element[outlier_coord] = (
+                mean_mean * 2,
+                mean_std * 2,
+                mean_median * 2,
+            )
+            warning2(outlier_coord)
+
+    for row in grouped_rows.values():
+        find_and_normalize_outliers(row)
+
+    return stats_element
 
 sf = lambda x, bnds, name: (x[name] - bnds[name][0]) / (bnds[name][1] - bnds[name][0])
 
 
 def warning():
     print(f'[WARNING]: Exceeding the level')
+
+def warning2(outlier_coord):
+    print(f"Выброс обнаружен в координатах: {outlier_coord}")
+
 
 def check(img, cnts, cnt_idx):
     cnt = cnts[cnt_idx]['contour']
@@ -131,12 +154,13 @@ def check(img, cnts, cnt_idx):
     rotated = rotate(img, cnt)
     grided = grid(rotated, 20)
     statistics_grid = statistics_in_tiles(grided)
-    overall_val_grid = overall_statistics(statistics_grid)
+    outliers_control = detect_outliers_in_rows(statistics_grid)
+    finally_statistics = overall_statistics(outliers_control)
 
-    mean_val = sf(overall_val_grid, bnds, "mean")
-    std_val = sf(overall_val_grid, bnds, "std")
-    median_val = sf(overall_val_grid, bnds, "median")
-
+    mean_val = sf(finally_statistics, bnds, "mean")
+    std_val = sf(finally_statistics, bnds, "std")
+    median_val = sf(finally_statistics, bnds, "median")
+    
     is_outlier = False
     is_warning = any((
         mean_val >= wrns['mean'],
@@ -146,10 +170,6 @@ def check(img, cnts, cnt_idx):
     if is_warning:
         warning()
 
-
-    detected_outliers = detect_outliers_in_rows(statistics_grid)
-    for row_idx, outlier_coords in detected_outliers.items():
-        print(f"[OUTLIER]: Row {row_idx} at coordinates {outlier_coords}")
 
     cnts[cnt_idx]['result'] = {
         'flags': {
