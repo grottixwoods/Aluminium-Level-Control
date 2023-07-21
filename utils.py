@@ -59,9 +59,6 @@ def quantization(img, clusters=8, rounds=1):
     return res.reshape((img.shape))
 
 
-def warning():
-    print(f'[WARNING]: Exceeding the level')
-
 def grid(img, d):
     h, w = img.shape[:2]
     grid = np.array(np.meshgrid(range(0, h-h%d, d), range(0, w-w%d, d))).T.reshape(-1, 2)
@@ -120,6 +117,12 @@ def detect_outliers_in_rows(stats_element):
                 row_warnings[row_idx].append(coords)
     return row_warnings
 
+sf = lambda x, bnds, name: (x[name] - bnds[name][0]) / (bnds[name][1] - bnds[name][0])
+
+
+def warning():
+    print(f'[WARNING]: Exceeding the level')
+
 def check(img, cnts, cnt_idx):
     cnt = cnts[cnt_idx]['contour']
     bnds = cnts[cnt_idx]['bounds']
@@ -130,26 +133,29 @@ def check(img, cnts, cnt_idx):
     statistics_grid = statistics_in_tiles(grided)
     overall_val_grid = overall_statistics(statistics_grid)
 
-    mean_val = overall_val_grid["mean"]
-    std_val = overall_val_grid["std"]
-    median_val = overall_val_grid["median"]
+    mean_val = sf(overall_val_grid, bnds, "mean")
+    std_val = sf(overall_val_grid, bnds, "std")
+    median_val = sf(overall_val_grid, bnds, "median")
 
-    is_warning = mean_val >= wrns['mean'] and \
-        std_val >= wrns['std'] and \
-        median_val >= wrns['median']
+    is_outlier = False
+    is_warning = any((
+        mean_val >= wrns['mean'],
+        std_val >= wrns['std'],
+        median_val >= wrns['median'],
+    ))
     if is_warning:
-        # warning()
-        pass
+        warning()
 
 
-    is_warning2 = detect_outliers_in_rows(statistics_grid)
-    if is_warning2:
-        print("Warnings:")
-    for row_idx, outlier_coords in is_warning2.items():
-        print(f"Row {row_idx}: Outliers at coordinates {outlier_coords}")
+    detected_outliers = detect_outliers_in_rows(statistics_grid)
+    for row_idx, outlier_coords in detected_outliers.items():
+        print(f"[OUTLIER]: Row {row_idx} at coordinates {outlier_coords}")
 
     cnts[cnt_idx]['result'] = {
-        'is_warning': is_warning,
+        'flags': {
+            'is_warning': is_warning,
+            'is_outlier': is_outlier,
+        },
         'values': {
             'mean': mean_val,
             'std': std_val,
