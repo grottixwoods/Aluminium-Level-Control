@@ -99,6 +99,26 @@ def overall_statistics(stats_element): # общая для cv.putText()
         'median':overall_median
     }
 
+def detect_outliers_in_rows(stats_element):
+    row_warnings = {}
+    sorted_items = sorted(stats_element.items(), key=lambda item: item[0][0])
+    grouped_rows = {}
+    for coords, stats in sorted_items:
+        row_idx = coords[0]
+        if row_idx not in grouped_rows:
+            grouped_rows[row_idx] = []
+        grouped_rows[row_idx].append((coords, stats))
+    for row_idx, row_elements in grouped_rows.items():
+        median_values = [stats[2] for _, stats in row_elements]
+        median_median = np.median(median_values)
+        threshold = 2 * median_median
+        for (coords, stats) in row_elements:
+            median_val = stats[2]
+            if abs(median_val - median_median) > threshold:
+                if row_idx not in row_warnings:
+                    row_warnings[row_idx] = []
+                row_warnings[row_idx].append(coords)
+    return row_warnings
 
 def check(img, cnts, cnt_idx):
     cnt = cnts[cnt_idx]['contour']
@@ -118,7 +138,15 @@ def check(img, cnts, cnt_idx):
         std_val >= wrns['std'] and \
         median_val >= wrns['median']
     if is_warning:
-        warning()
+        # warning()
+        pass
+
+
+    is_warning2 = detect_outliers_in_rows(statistics_grid)
+    if is_warning2:
+        print("Warnings:")
+    for row_idx, outlier_coords in is_warning2.items():
+        print(f"Row {row_idx}: Outliers at coordinates {outlier_coords}")
 
     cnts[cnt_idx]['result'] = {
         'is_warning': is_warning,

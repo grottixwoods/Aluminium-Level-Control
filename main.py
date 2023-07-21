@@ -111,7 +111,8 @@ if __name__ == '__main__':
     ]
     contours = {i: v for i, v in enumerate(contours)}
     main(
-        video_path = '2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc.mp4',
+        # video_path = '2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc.mp4',
+        video_path = '2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc(2).mp4',
         contours = contours,
         is_visualized = True,
         video_save_path = 'out_2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc.mp4',
