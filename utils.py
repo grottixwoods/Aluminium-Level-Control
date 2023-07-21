@@ -62,21 +62,57 @@ def quantization(img, clusters=8, rounds=1):
 def warning():
     print(f'[WARNING]: Exceeding the level')
 
+def grid(img, d):
+    h, w = img.shape[:2]
+    grid = np.array(np.meshgrid(range(0, h-h%d, d), range(0, w-w%d, d))).T.reshape(-1, 2)
+    tiles = {}
+    for i, j in grid:
+        box = (i, j, i+d, j+d)
+        tile_img = img[box[0]:box[2], box[1]:box[3]]
+        tiles[(i, j)] = tile_img
+    return tiles
+
+def statistics_in_tiles(tiles): #для каждого элемента в сетке
+    stats_element = {}
+    for coords, tile_img in tiles.items():
+        mean_value = round(np.mean(tile_img),2)
+        std_value = round(np.std(tile_img),2)
+        median_value = round(np.median(tile_img),2)
+        stats_element[coords] = mean_value, std_value, median_value
+    return stats_element
+
+def overall_statistics(stats_element): # общая для cv.putText()
+    all_mean_values = []
+    all_std_values = []
+    all_median_values = []
+    for coords, (mean_value, std_value, median_value) in stats_element.items():
+        all_mean_values.append(mean_value)
+        all_std_values.append(std_value)
+        all_median_values.append(median_value)
+
+    overall_mean = round(np.mean(all_mean_values), 2)
+    overall_std = round(np.std(all_std_values), 2)
+    overall_median = round(np.median(all_median_values), 2)
+    return {
+        'mean':overall_mean,
+        'std':overall_std,
+        'median':overall_median
+    }
+
+
 def check(img, cnts, cnt_idx):
     cnt = cnts[cnt_idx]['contour']
     bnds = cnts[cnt_idx]['bounds']
     wrns = cnts[cnt_idx]['warnings']
 
     rotated = rotate(img, cnt)
-    # cells = cell_split(rotated, rows, cols)
+    grided = grid(rotated, 20)
+    statistics_grid = statistics_in_tiles(grided)
+    overall_val_grid = overall_statistics(statistics_grid)
 
-    _mean_val = rotated.mean()
-    _std_val = 0
-    _median_val = 0
-
-    mean_val = (_mean_val - bnds['mean'][0]) / (bnds['mean'][1] - bnds['mean'][0])
-    std_val = 0
-    median_val = 0
+    mean_val = overall_val_grid["mean"]
+    std_val = overall_val_grid["std"]
+    median_val = overall_val_grid["median"]
 
     is_warning = mean_val >= wrns['mean'] and \
         std_val >= wrns['std'] and \
