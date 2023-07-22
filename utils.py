@@ -125,9 +125,9 @@ def detect_outliers_in_rows(stats_element):
         if outlier_coord:
             outlier_mean, outlier_std, outlier_median = stats_element[outlier_coord]
             stats_element[outlier_coord] = (
-                mean_mean * 2,
-                mean_std * 2,
-                mean_median * 2,
+                mean_mean,
+                mean_std,
+                mean_median,
             )
             warning2(outlier_coord)
 
