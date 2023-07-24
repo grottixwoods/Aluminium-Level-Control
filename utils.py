@@ -112,7 +112,7 @@ def detect_outliers_in_rows(stats_element):
         mean_std = sum(std_values) / len(std_values)
         mean_median = sum(median_values) / len(median_values)
         outlier_coord = None
-
+        recession_coord = None
         for coord, values in row:
             if (
                 values[0] > (mean_mean + mean_std) * 1.5
@@ -121,6 +121,14 @@ def detect_outliers_in_rows(stats_element):
             ):
                 outlier_coord = coord
                 break
+            elif (
+                values[0] < (mean_mean - mean_std) * 0.3
+                or values[1] < (mean_std - mean_std) * 0.3
+                or values[2] < (mean_median - mean_std) * 0.3                   
+            ):
+                recession_coord = coord
+                break                
+                
 
         if outlier_coord:
             outlier_mean, outlier_std, outlier_median = stats_element[outlier_coord]
@@ -130,6 +138,15 @@ def detect_outliers_in_rows(stats_element):
                 mean_median,
             )
             warning2(outlier_coord)
+        
+        elif recession_coord:
+            outlier_mean, outlier_std, outlier_median = stats_element[recession_coord]
+            stats_element[recession_coord] = (
+                mean_mean,
+                mean_std,
+                mean_median,
+            )
+            warning3(recession_coord)        
 
     for row in grouped_rows.values():
         find_and_normalize_outliers(row)
@@ -143,7 +160,10 @@ def warning():
     print(f'[WARNING]: Exceeding the level')
 
 def warning2(outlier_coord):
-    print(f"Выброс обнаружен в координатах: {outlier_coord}")
+    print(f"[OUTLIER]:  in coordinate: {outlier_coord}")
+
+def warning3(outlier_coord):
+    print(f"[RECESSION]: in coordinate: {outlier_coord}")
 
 
 def check(img, cnts, cnt_idx):
