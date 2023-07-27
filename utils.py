@@ -38,6 +38,16 @@ def rotate(img, pts):
 	warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
 	return warped
     
+def calibrate_frame(frame, target_mean, target_std):
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    mean_val = np.mean(frame)
+    std_val = np.std(frame)
+    contrast = target_std / std_val
+    brightness = target_mean - (mean_val * contrast)
+    adjusted_frame = cv2.convertScaleAbs(frame, alpha=contrast, beta=brightness)
+    calibrated_frame = cv2.cvtColor(adjusted_frame, cv2.COLOR_GRAY2BGR)
+    return calibrated_frame
+
 def quantization(img, clusters=8, rounds=1):
     h, w = img.shape[:2]
     samples = np.zeros([h*w, 3], dtype=np.float32)
@@ -66,7 +76,7 @@ def grid(img, d):
     for i, j in grid:
         box = (i, j, i+d, j+d)
         tile_img = img[box[0]:box[2], box[1]:box[3]]
-        tiles[(i, j)] = tile_img
+        tiles[(j, i)] = tile_img
     return tiles
 
 def statistics_in_tiles(tiles): #для каждого элемента в сетке
@@ -78,22 +88,28 @@ def statistics_in_tiles(tiles): #для каждого элемента в се�
         stats_element[coords] = mean_value, std_value, median_value
     return stats_element
 
-def overall_statistics(stats_element): # общая для cv.putText()
+def overall_statistics(stats_element):  # общая для cv.putText()
     all_mean_values = []
     all_std_values = []
     all_median_values = []
+    all_coords = []
     for coords, (mean_value, std_value, median_value) in stats_element.items():
         all_mean_values.append(mean_value)
         all_std_values.append(std_value)
         all_median_values.append(median_value)
+        all_coords.append(coords)
 
     overall_mean = round(np.mean(all_mean_values), 2)
     overall_std = round(np.std(all_std_values), 2)
     overall_median = round(np.median(all_median_values), 2)
     return {
-        'mean':overall_mean,
-        'std':overall_std,
-        'median':overall_median
+        'mean': overall_mean,
+        'std': overall_std,
+        'median': overall_median,
+        'all_mean': all_mean_values,
+        'all_std': all_std_values,
+        'all_median': all_median_values,
+        'all_coords': all_coords
     }
 
 def detect_outliers_in_rows(stats_element):
@@ -153,8 +169,42 @@ def detect_outliers_in_rows(stats_element):
 
     return stats_element
 
-sf = lambda x, bnds, name: (x[name] - bnds[name][0]) / (bnds[name][1] - bnds[name][0])
+def grid_visualiser(finally_statistics, bnds, wrns):
+    all_mean_val = []
+    all_std_val = []
+    all_median_val = []
+    all_coords = finally_statistics['all_coords']
+    is_warning_cell = []
 
+    for element_all_mean_val, element_all_std_val, element_all_median_val in zip(finally_statistics['all_mean'],
+                                                                                 finally_statistics['all_std'],
+                                                                                 finally_statistics['all_median']):
+        element_all_mean_val = sf_cell(bnds, element_all_mean_val, 'mean')
+        element_all_std_val = sf_cell(bnds, element_all_std_val, 'std')
+        element_all_median_val = sf_cell(bnds, element_all_median_val, 'median')
+
+        all_mean_val.append(element_all_mean_val)
+        all_std_val.append(element_all_std_val)
+        all_median_val.append(element_all_median_val)
+        is_warning = any((
+            element_all_mean_val >= wrns['mean'],
+            element_all_std_val >= wrns['std'],
+            element_all_median_val >= wrns['median'],
+        ))
+        is_warning_cell.append(is_warning)
+    if is_warning:
+        warning()
+    return {
+        'all_mean_val': all_mean_val,
+        'all_std_val': all_std_val,
+        'all_median_val': all_median_val,
+        'all_coords': all_coords,
+        'is_warning_cell': is_warning_cell,
+    }
+
+
+sf = lambda x, bnds, name: (x[name] - bnds[name][0]) / (bnds[name][1] - bnds[name][0])
+sf_cell = lambda bnds, val, name: (val - bnds[name][0]) / (bnds[name][1] - bnds[name][0])
 
 def warning():
     print(f'[WARNING]: Exceeding the level')
@@ -172,10 +222,13 @@ def check(img, cnts, cnt_idx):
     wrns = cnts[cnt_idx]['warnings']
 
     rotated = rotate(img, cnt)
-    grided = grid(rotated, 20)
+    calibrated = calibrate_frame(rotated, 128, 50)
+    grided = grid(calibrated, 20)
     statistics_grid = statistics_in_tiles(grided)
     outliers_control = detect_outliers_in_rows(statistics_grid)
     finally_statistics = overall_statistics(outliers_control)
+    cell_statistics = grid_visualiser(finally_statistics, bnds, wrns)
+
 
     mean_val = sf(finally_statistics, bnds, "mean")
     std_val = sf(finally_statistics, bnds, "std")
@@ -200,5 +253,14 @@ def check(img, cnts, cnt_idx):
             'mean': mean_val,
             'std': std_val,
             'median': median_val,
+        },
+        'values_cell': {
+            'all_mean': cell_statistics['all_mean_val'],
+            'all_std': cell_statistics['all_std_val'],
+            'all_median': cell_statistics['all_median_val'],
+            'all_coords': cell_statistics['all_coords'],
+        },
+        'flags_cell': {
+            'is_warning_cell': cell_statistics['is_warning_cell'],
         }
     }

@@ -40,22 +40,42 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
             for contour_index, val in contours.items():
                 contour = val['contour']
                 flags = val['result']['flags']
+                flags_cell = val['result']['flags_cell']
+                # print(flags_cell)
                 values = val['result']['values']
+                values_cell = val['result']['values_cell']
                 color = (0, 0, 255) if any(flags.values()) else (0, 255, 0)
                 test_pos_x = contour[:, 0].min()
                 test_pos_y = contour[:, 1].max()
                 text = f'{contour_index} | ' + ' | '.join([f'{k}: {v}' for k, v in flags.items()])
                 cv2.putText(
-                    frame, text, (test_pos_x, test_pos_y+30),
+                    frame, text, (test_pos_x, test_pos_y + 30),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, color, 2
                 )
                 text = ' | '.join([f'{k}: {round(v, 4)}' for k, v in values.items()])
                 cv2.putText(
-                    frame, text, (test_pos_x, test_pos_y+60),
+                    frame, text, (test_pos_x, test_pos_y + 60),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, color, 2
                 )
+                for mean_val, std_val, median_val, coords, flag_1 in zip(values_cell['all_mean'], values_cell['all_std'],
+                                                         values_cell['all_median'], values_cell['all_coords'], flags_cell['is_warning_cell']):
+                    coords = [list(coords)]
+                    coords += np.tile(coords[0], (4, 1))
+                    coords = coords // 2
+                    coords += np.tile(contour[[0]], (4, 1)) + np.array([[50, 200], [50, 200], [50, 200], [50, 200]])
+                    coords[1] += [20, 0]
+                    coords[2] += [20, 20]
+                    coords[3] += [0, 20]
+                    # print(mean_val, std_val, median_val)
+
+
+                    color_cell = (0, 0, 255) if flag_1 else (0, 255, 0)
+                    cv2.fillPoly(frame, [coords], color=color_cell)
+
+
+                    cv2.drawContours(frame, [coords], 0, (255, 255, 255), 2)
                 cv2.drawContours(frame, [contour], 0, color, 2)
             if is_visualized:
                 cv2.imshow('Frame', frame)
@@ -119,8 +139,7 @@ if __name__ == '__main__':
     )
 
     # TODO:
-    # 1) логика заполнения линии снизу в вверх, иначе вывод warning (подумать)
+    # 1) Подправить пороговые значения main() / подобрать оптимальные значения каллибровки в utils
     # 2) измнение флага is_outlier
     # 3) тест по двум параметрам яркости и красочности в формате HUE
-    # *) калибровка bounds и warning
 
