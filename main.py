@@ -59,23 +59,21 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, color, 2
                 )
+                
                 for mean_val, std_val, median_val, coords, flag_1 in zip(values_cell['all_mean'], values_cell['all_std'],
-                                                         values_cell['all_median'], values_cell['all_coords'], flags_cell['is_warning_cell']):
+                                                        values_cell['all_median'], values_cell['all_coords'], flags_cell['is_warning_cell']):
                     coords = [list(coords)]
+                    coords[0][0], coords[0][1] = coords[0][1], coords[0][0]
                     coords += np.tile(coords[0], (4, 1))
                     coords = coords // 2
                     coords += np.tile(contour[[0]], (4, 1)) + np.array([[50, 200], [50, 200], [50, 200], [50, 200]])
                     coords[1] += [20, 0]
                     coords[2] += [20, 20]
                     coords[3] += [0, 20]
-                    # print(mean_val, std_val, median_val)
-
-
                     color_cell = (0, 0, 255) if flag_1 else (0, 255, 0)
                     cv2.fillPoly(frame, [coords], color=color_cell)
-
-
                     cv2.drawContours(frame, [coords], 0, (255, 255, 255), 2)
+
                 cv2.drawContours(frame, [contour], 0, color, 2)
             if is_visualized:
                 cv2.imshow('Frame', frame)

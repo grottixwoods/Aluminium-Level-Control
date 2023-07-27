@@ -76,7 +76,7 @@ def grid(img, d):
     for i, j in grid:
         box = (i, j, i+d, j+d)
         tile_img = img[box[0]:box[2], box[1]:box[3]]
-        tiles[(j, i)] = tile_img
+        tiles[(i, j)] = tile_img
     return tiles
 
 def statistics_in_tiles(tiles): #для каждого элемента в сетке
