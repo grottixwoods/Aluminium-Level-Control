@@ -58,7 +58,9 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, color, 2
                 )
+                # Вывод рамки в резервуаре
                 cv2.drawContours(frame, [contour], 0, color, 2)
+                # Разбитие рамки на 4 уровня
                 height = np.max(contour[:, 1]) - np.min(contour[:, 1])
                 height_per_region = height // 4
                 regions = []
@@ -70,7 +72,9 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                                                    [np.max(contour[:, 0]), y_max],
                                                    [np.min(contour[:, 0]), y_max]])
                     regions.append(region_coordinates)
+                # Разбитие списка warnings каждой ячейки на 4 уровня (на 4 списка)
                 rows_flags = np.array_split(flags_cell, 4)
+                # Отрисовка уровней, окрашивая их в зависимости от количества ячеек с warning
                 for i, region in enumerate(regions):
                     region += np.array([[100, 200], [100, 200], [100, 200], [100, 200]])
                     if sum(rows_flags[i]) / len(rows_flags[i]) >= 0.6:
