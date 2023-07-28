@@ -40,7 +40,7 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
             for contour_index, val in contours.items():
                 contour = val['contour']
                 flags = val['result']['flags']
-                flags_cell = val['result']['flags_cell']
+                flags_cell = val['result']['flags_cell']['is_warning_cell']
                 values = val['result']['values']
                 values_cell = val['result']['values_cell']
                 color = (0, 0, 255) if any(flags.values()) else (0, 255, 0)
@@ -58,26 +58,34 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, color, 2
                 )
-
-                cell_height = (contour[3][1] - contour[0][1]) // 3
-                cell_width = (contour[1][0] - contour[0][0]) // 15
-                for mean_val, std_val, median_val, coords, flag_cell in zip(values_cell['all_mean'],
-                                                                       values_cell['all_std'],
-                                                                       values_cell['all_median'],
-                                                                       values_cell['all_coords'],
-                                                                       flags_cell['is_warning_cell']): #
-                    coords = [list(coords)]
-                    coords[0][0], coords[0][1] = coords[0][1], coords[0][0]
-                    coords += np.tile(coords[0], (4, 1))
-                    coords = coords // 2
-                    coords += np.tile(contour[[0]], (4, 1)) + np.array([[50, 200], [50, 200], [50, 200], [50, 200]])
-                    coords[1] += [cell_width, 0]
-                    coords[2] += [cell_width, cell_height]
-                    coords[3] += [0, cell_height]
-                    color_cell = (0, 0, 255) if flag_cell else (0, 255, 0)
-                    cv2.fillPoly(frame, [coords], color=color_cell)
-                    cv2.drawContours(frame, [coords], 0, (255, 255, 255), 2)
+                # Вывод рамки в резервуаре
                 cv2.drawContours(frame, [contour], 0, color, 2)
+                # Разбитие рамки на 4 уровня
+                height = np.max(contour[:, 1]) - np.min(contour[:, 1])
+                height_per_region = height // 4
+                regions = []
+                for i in range(4):
+                    y_min = np.min(contour[:, 1]) + i * height_per_region
+                    y_max = np.min(contour[:, 1]) + (i + 1) * height_per_region
+                    region_coordinates = np.array([[np.min(contour[:, 0]), y_min],
+                                                   [np.max(contour[:, 0]), y_min],
+                                                   [np.max(contour[:, 0]), y_max],
+                                                   [np.min(contour[:, 0]), y_max]])
+                    regions.append(region_coordinates)
+                # Разбитие списка warnings каждой ячейки на 4 уровня (на 4 списка)
+                rows_flags = np.array_split(flags_cell, 4)
+                # Отрисовка уровней, окрашивая их в зависимости от количества ячеек с warning
+                for i, region in enumerate(regions):
+                    region += np.array([[100, 200], [100, 200], [100, 200], [100, 200]])
+                    if sum(rows_flags[i]) / len(rows_flags[i]) >= 0.6:
+                        color_row = (0, 0, 255)
+                    elif sum(rows_flags[i]) / len(rows_flags[i]) >= 0.4:
+                            color_row = (0, 255, 255)
+                    else:
+                        color_row = (0, 255, 0)
+                    cv2.fillPoly(frame, [region], color=color_row)
+                    cv2.drawContours(frame, [region], 0, (255, 255, 255), 2)
+
             if is_visualized:
                 cv2.imshow('Frame', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
