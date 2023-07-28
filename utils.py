@@ -69,7 +69,7 @@ def quantization(img, clusters=8, rounds=1):
     return res.reshape((img.shape))
 
 
-def grid(img, cells_in_height, cells_in_width):
+def grid(img, cells_in_height, cells_in_width): #
     h, w = img.shape[:2]
     d_h = h // cells_in_height
     d_w = w // cells_in_width

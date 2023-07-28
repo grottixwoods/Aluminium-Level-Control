@@ -65,7 +65,7 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                                                                        values_cell['all_std'],
                                                                        values_cell['all_median'],
                                                                        values_cell['all_coords'],
-                                                                       flags_cell['is_warning_cell']):
+                                                                       flags_cell['is_warning_cell']): #
                     coords = [list(coords)]
                     coords[0][0], coords[0][1] = coords[0][1], coords[0][0]
                     coords += np.tile(coords[0], (4, 1))
