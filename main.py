@@ -11,9 +11,9 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
 
     if video_save_path:
         fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-        out_shape = int(cap.get(3)), int(cap.get(4))  # width, height
+        out_shape = int(cap.get(3)), int(cap.get(4)) # width, height
         out = cv2.VideoWriter(video_save_path, fourcc, frame_per_second, out_shape, True)
-
+    
     frame_cur = 0
     frame_step = frame_per_second
     while cap.isOpened():
@@ -27,8 +27,8 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
         for contour_index in contours.keys():
             pool.append(
                 threading.Thread(
-                    target=check,
-                    args=(frame, contours, contour_index)
+                    target = check, 
+                    args = (frame, contours, contour_index)
                 )
             )
         for t in pool:
@@ -39,12 +39,8 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
         if is_visualized or video_save_path:
             for contour_index, val in contours.items():
                 contour = val['contour']
-                flags = val['result']['flags']
-                flags_cell = val['result']['flags_cell']
-                # print(flags_cell)
-                values = val['result']['values']
-                values_cell = val['result']['values_cell']
-                color = (0, 0, 255) if any(flags.values()) else (0, 255, 0)
+                is_warning = val['result']['is_warning']
+                color = (0, 0, 255) if is_warning else (0, 255, 0)
                 test_pos_x = contour[:, 0].min()
                 test_pos_y = contour[:, 1].max()
                 text = f'{contour_index} | ' + ' | '.join([f'{k}: {v}' for k, v in flags.items()])
@@ -141,7 +137,7 @@ if __name__ == '__main__':
     )
 
     # TODO:
-    # 1) логика заполнения линии снизу в вверх, иначе вывод warning (подумать)
+    # 1) Подправить пороговые значения main() / подобрать оптимальные значения каллибровки в utils
     # 2) измнение флага is_outlier
     # 3) тест по двум параметрам яркости и красочности в формате HUE
-    # *) калибровка bounds и warning
+
