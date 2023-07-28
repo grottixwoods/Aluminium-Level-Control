@@ -39,8 +39,11 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
         if is_visualized or video_save_path:
             for contour_index, val in contours.items():
                 contour = val['contour']
-                is_warning = val['result']['is_warning']
-                color = (0, 0, 255) if is_warning else (0, 255, 0)
+                flags = val['result']['flags']
+                flags_cell = val['result']['flags_cell']
+                values = val['result']['values']
+                values_cell = val['result']['values_cell']
+                color = (0, 0, 255) if any(flags.values()) else (0, 255, 0)
                 test_pos_x = contour[:, 0].min()
                 test_pos_y = contour[:, 1].max()
                 text = f'{contour_index} | ' + ' | '.join([f'{k}: {v}' for k, v in flags.items()])
