@@ -220,7 +220,6 @@ def check(img, cnts, cnt_idx):
     grided = grid(rotated, 3, 15)
     statistics_grid = statistics_in_tiles(grided)
     outliers_control = detect_outliers_in_rows(statistics_grid)
-    print(outliers_control)
     finally_statistics = overall_statistics(outliers_control)
     cell_statistics = grid_visualiser(finally_statistics, bnds, wrns)
 
