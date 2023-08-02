@@ -75,15 +75,22 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                 # Разбитие списка warnings каждой ячейки на 4 уровня (на 4 списка)
                 rows_flags = np.array_split(flags_cell, 4)
                 # Отрисовка уровней, окрашивая их в зависимости от количества ячеек с warning
+                colors = {'red': (0, 0, 255), 'yellow': (0, 255, 255), 'green': (0, 255, 0)}
+                color_rows = [None, None, None, None]
                 for i, region in enumerate(regions):
                     region += np.array([[100, 200], [100, 200], [100, 200], [100, 200]])
-                    if sum(rows_flags[i]) / len(rows_flags[i]) >= 0.6:
-                        color_row = (0, 0, 255)
-                    elif sum(rows_flags[i]) / len(rows_flags[i]) >= 0.4:
-                            color_row = (0, 255, 255)
-                    else:
-                        color_row = (0, 255, 0)
-                    cv2.fillPoly(frame, [region], color=color_row)
+                    percentage = sum(rows_flags[i]) / len(rows_flags[i])
+                    if percentage >= 0.5:
+                        for j, color_row in enumerate(color_rows):
+                            if j >= i:
+                                color_rows[j] = colors['red']
+
+                    # elif sum(rows_flags[i]) / len(rows_flags[i]) >= 0.4:
+                    #     color_row = (0, 255, 255)
+                    elif color_rows[i] != colors['red']:
+                        color_rows[i] = colors['green']
+
+                    cv2.fillPoly(frame, [region], color=color_rows[i])
                     cv2.drawContours(frame, [region], 0, (255, 255, 255), 2)
 
             if is_visualized:
@@ -133,9 +140,9 @@ if __name__ == '__main__':
                 'std': (0, 100),
             },
             'warnings': {
-                'mean': 0.5,
-                'median': 0.5,
-                'std': 1.0,
+                'mean': 1.5,
+                'median': 0.6,
+                'std': 1.7,
             },
         },
     ]
