@@ -16,6 +16,10 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
     
     frame_cur = 0
     frame_step = frame_per_second
+
+    past_rows_colors = [[], [], []]
+    final_colors = [[], [], []]
+
     while cap.isOpened():
         is_next, frame = cap.read()
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_cur)
@@ -27,8 +31,8 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
         for contour_index in contours.keys():
             pool.append(
                 threading.Thread(
-                    target = check, 
-                    args = (frame, contours, contour_index)
+                    target=check,
+                    args=(frame, contours, contour_index)
                 )
             )
         for t in pool:
@@ -80,18 +84,44 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                 for i, region in enumerate(regions):
                     region += np.array([[100, 200], [100, 200], [100, 200], [100, 200]])
                     percentage = sum(rows_flags[i]) / len(rows_flags[i])
-                    if percentage >= 0.5:
+                    if percentage >= 0.7:
                         for j, color_row in enumerate(color_rows):
                             if j >= i:
                                 color_rows[j] = colors['red']
-
-                    # elif sum(rows_flags[i]) / len(rows_flags[i]) >= 0.4:
-                    #     color_row = (0, 255, 255)
                     elif color_rows[i] != colors['red']:
                         color_rows[i] = colors['green']
 
-                    cv2.fillPoly(frame, [region], color=color_rows[i])
-                    cv2.drawContours(frame, [region], 0, (255, 255, 255), 2)
+
+                    if i == 3:
+                        past_rows_colors[contour_index].append(color_rows)
+                        if len(past_rows_colors[contour_index]) == 10:
+                            past_rows_colors[contour_index].pop(0)
+                            red_counts = [0, 0, 0, 0]
+                            green_counts = [0, 0, 0, 0]
+                            for sublist in past_rows_colors[contour_index]:
+                                for index, item in enumerate(sublist):
+                                    if item == (0, 0, 255):
+                                        red_counts[index] += 1
+                                    elif item == (0, 255, 0):
+                                        green_counts[index] += 1
+
+                            for r, g in zip(red_counts, green_counts):
+                                if r > g:
+                                    final_colors[contour_index].append(colors['red'])
+                                else:
+                                    final_colors[contour_index].append(colors['green'])
+
+                            final_colors[contour_index] = final_colors[contour_index][-4:]
+
+                            print(past_rows_colors)
+                            print("red:", red_counts, "green:", green_counts)
+                            print(final_colors)
+                            print(final_colors[contour_index][i])
+
+                    if final_colors[contour_index]:
+                        cv2.fillPoly(frame, [region], color=final_colors[contour_index][i])
+                        cv2.drawContours(frame, [region], 0, (255, 255, 255), 2)
+
 
             if is_visualized:
                 cv2.imshow('Frame', frame)
