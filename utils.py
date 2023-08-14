@@ -131,41 +131,31 @@ def detect_outliers_in_rows(stats_element):
         mean_mean = sum(mean_values) / len(mean_values)
         mean_std = sum(std_values) / len(std_values)
         mean_median = sum(median_values) / len(median_values)
-        outlier_coord = None
-        recession_coord = None
+        outlier_coords = []
+        recession_coords = []
+
         for coord, values in row:
             if (
                 values[0] > (mean_mean + mean_std) * 1.5
                 or values[1] > (mean_std + mean_std) * 1.5
                 or values[2] > (mean_median + mean_std) * 1.5
             ):
-                outlier_coord = coord
-                break
+                outlier_coords.append(coord)
             elif (
                 values[0] < (mean_mean - mean_std) * 0.3
                 or values[1] < (mean_std - mean_std) * 0.3
                 or values[2] < (mean_median - mean_std) * 0.3
             ):
-                recession_coord = coord
-                break
+                recession_coords.append(coord)
 
-
-        if outlier_coord:
+        for outlier_coord in outlier_coords:
             outlier_mean, outlier_std, outlier_median = stats_element[outlier_coord]
-            stats_element[outlier_coord] = (
-                mean_mean,
-                mean_std,
-                mean_median,
-            )
+            stats_element[outlier_coord] = (mean_mean, mean_std, mean_median)
             warning2(outlier_coord)
 
-        elif recession_coord:
+        for recession_coord in recession_coords:
             outlier_mean, outlier_std, outlier_median = stats_element[recession_coord]
-            stats_element[recession_coord] = (
-                mean_mean,
-                mean_std,
-                mean_median,
-            )
+            stats_element[recession_coord] = (mean_mean, mean_std, mean_median)
             warning3(recession_coord)
 
     for row in grouped_rows.values():
@@ -226,8 +216,8 @@ def check(img, cnts, cnt_idx):
     wrns = cnts[cnt_idx]['warnings']
 
     rotated = rotate(img, cnt)
-    calibrated = calibrate_frame(rotated, 128, 50)
-    grided = grid(calibrated, 3, 15)
+    # calibrated = calibrate_frame(rotated, 128, 50)
+    grided = grid(rotated, 3, 15)
     statistics_grid = statistics_in_tiles(grided)
     outliers_control = detect_outliers_in_rows(statistics_grid)
     finally_statistics = overall_statistics(outliers_control)
@@ -246,7 +236,6 @@ def check(img, cnts, cnt_idx):
     ))
     if is_warning:
         warning()
-
 
     cnts[cnt_idx]['result'] = {
         'flags': {
