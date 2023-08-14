@@ -91,7 +91,6 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                     elif color_rows[i] != colors['red']:
                         color_rows[i] = colors['green']
 
-
                     if i == 3:
                         past_rows_colors[contour_index].append(color_rows)
                         if len(past_rows_colors[contour_index]) == 10:
@@ -110,13 +109,7 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                                     final_colors[contour_index].append(colors['red'])
                                 else:
                                     final_colors[contour_index].append(colors['green'])
-
                             final_colors[contour_index] = final_colors[contour_index][-4:]
-
-                            print(past_rows_colors)
-                            print("red:", red_counts, "green:", green_counts)
-                            print(final_colors)
-                            print(final_colors[contour_index][i])
 
                     if final_colors[contour_index]:
                         cv2.fillPoly(frame, [region], color=final_colors[contour_index][i])

@@ -69,7 +69,7 @@ def quantization(img, clusters=8, rounds=1):
     return res.reshape((img.shape))
 
 
-def grid(img, cells_in_height, cells_in_width): #
+def grid(img, cells_in_height, cells_in_width):
     h, w = img.shape[:2]
     d_h = h // cells_in_height
     d_w = w // cells_in_width
@@ -216,7 +216,7 @@ def check(img, cnts, cnt_idx):
     wrns = cnts[cnt_idx]['warnings']
 
     rotated = rotate(img, cnt)
-    # calibrated = calibrate_frame(rotated, 128, 50)
+    calibrated = calibrate_frame(rotated, 128, 50)
     grided = grid(rotated, 3, 15)
     statistics_grid = statistics_in_tiles(grided)
     outliers_control = detect_outliers_in_rows(statistics_grid)
@@ -236,6 +236,7 @@ def check(img, cnts, cnt_idx):
     ))
     if is_warning:
         warning()
+
 
     cnts[cnt_idx]['result'] = {
         'flags': {
