@@ -4,16 +4,15 @@ import threading
 
 from utils import *
 
-
 def main(video_path, contours, is_visualized=False, video_save_path=None):
     cap = cv2.VideoCapture(video_path)
     frame_per_second = cap.get(cv2.CAP_PROP_FPS)
 
     if video_save_path:
         fourcc = cv2.VideoWriter_fourcc(*'MP4V')
-        out_shape = int(cap.get(3)), int(cap.get(4)) # width, height
+        out_shape = int(cap.get(3)), int(cap.get(4))
         out = cv2.VideoWriter(video_save_path, fourcc, frame_per_second, out_shape, True)
-    
+
     frame_cur = 0
     frame_step = frame_per_second
 
@@ -32,7 +31,7 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
             pool.append(
                 threading.Thread(
                     target=check,
-                    args=(frame, contours, contour_index)
+                    args=(frame.copy(), contours, contour_index)
                 )
             )
         for t in pool:
@@ -62,9 +61,7 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, color, 2
                 )
-                # Вывод рамки в резервуаре
                 cv2.drawContours(frame, [contour], 0, color, 2)
-                # Разбитие рамки на 4 уровня
                 height = np.max(contour[:, 1]) - np.min(contour[:, 1])
                 height_per_region = height // 4
                 regions = []
@@ -76,9 +73,7 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                                                    [np.max(contour[:, 0]), y_max],
                                                    [np.min(contour[:, 0]), y_max]])
                     regions.append(region_coordinates)
-                # Разбитие списка warnings каждой ячейки на 4 уровня (на 4 списка)
                 rows_flags = np.array_split(flags_cell, 4)
-                # Отрисовка уровней, окрашивая их в зависимости от количества ячеек с warning
                 colors = {'red': (0, 0, 255), 'yellow': (0, 255, 255), 'green': (0, 255, 0)}
                 color_rows = [None, None, None, None]
                 for i, region in enumerate(regions):
@@ -115,7 +110,6 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                         cv2.fillPoly(frame, [region], color=final_colors[contour_index][i])
                         cv2.drawContours(frame, [region], 0, (255, 255, 255), 2)
 
-
             if is_visualized:
                 cv2.imshow('Frame', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -124,8 +118,9 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                 out.write(frame)
 
     cap.release()
+    if video_save_path:
+        out.release()
     cv2.destroyAllWindows()
-
 
 if __name__ == '__main__':
     contours = [
@@ -171,14 +166,8 @@ if __name__ == '__main__':
     ]
     contours = {i: v for i, v in enumerate(contours)}
     main(
-        video_path='2023-07-12_03:49:11_03:55:00_4306a3db50ad28fc.mp4',
+        video_path='2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc.mp4',
         contours=contours,
         is_visualized=True,
         video_save_path='out_2023-07-12_03:49:11_03:55:00_4306a3db50ad28fc.mp4',
     )
-
-    # TODO:
-    # 1) Подправить пороговые значения main() / подобрать оптимальные значения каллибровки в utils
-    # 2) измнение флага is_outlier
-    # 3) тест по двум параметрам яркости и красочности в формате HUE
-
