@@ -4,7 +4,7 @@ import threading
 
 from utils import *
 
-def main(video_path, contours, is_visualized=False, video_save_path=None):
+def main(video_path, contours, video_save_path, is_visualized=False):
     cap = cv2.VideoCapture(video_path)
     frame_per_second = cap.get(cv2.CAP_PROP_FPS)
 
@@ -45,7 +45,6 @@ def main(video_path, contours, is_visualized=False, video_save_path=None):
                 flags = val['result']['flags']
                 flags_cell = val['result']['flags_cell']['is_warning_cell']
                 values = val['result']['values']
-                values_cell = val['result']['values_cell']
                 color = (0, 0, 255) if any(flags.values()) else (0, 255, 0)
                 test_pos_x = contour[:, 0].min()
                 test_pos_y = contour[:, 1].max()
@@ -151,7 +150,7 @@ if __name__ == '__main__':
             },
         },
         {
-            'contour': np.array([[262, 405], [492, 365], [497, 400], [267, 435]]),
+            'contour': np.array([[262, 407], [492, 368], [497, 400], [267, 435]]),
             'bounds': {
                 'mean': (140, 190),
                 'median': (140, 190),
