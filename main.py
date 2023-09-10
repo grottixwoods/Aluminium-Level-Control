@@ -78,7 +78,7 @@ def main(video_path, contours, video_save_path, is_visualized=False):
                 for i, region in enumerate(regions):
                     region += np.array([[100, 200], [100, 200], [100, 200], [100, 200]])
                     percentage = sum(rows_flags[i]) / len(rows_flags[i])
-                    if percentage >= 0.7:
+                    if percentage >= 0.6:
                         for j, color_row in enumerate(color_rows):
                             if j >= i:
                                 color_rows[j] = colors['red']
@@ -126,14 +126,14 @@ if __name__ == '__main__':
         {
             'contour': np.array([[1155, 660], [1412, 625], [1412, 677], [1162, 715]]),
             'bounds': {
-                'mean': (200, 230),
-                'median': (200, 230),
-                'std': (0, 100),
+                'mean': (200, 235),
+                'median': (200, 235),
+                'std': (0, 105),
             },
             'warnings': {
-                'mean': 0.5,
-                'median': 0.5,
-                'std': 1.0,
+                'mean': 0.55,
+                'median': 0.55,
+                'std': 1.05,
             },
         },
         {
@@ -144,22 +144,22 @@ if __name__ == '__main__':
                 'std': (0, 100),
             },
             'warnings': {
-                'mean': 0.5,
-                'median': 0.5,
-                'std': 1.0,
+                'mean': 0.6,
+                'median': 0.6,
+                'std': 1.1,
             },
         },
         {
             'contour': np.array([[262, 407], [492, 368], [497, 400], [267, 435]]),
             'bounds': {
-                'mean': (140, 190),
-                'median': (140, 190),
-                'std': (0, 100),
+                'mean': (140, 200),
+                'median': (140, 200),
+                'std': (0, 110),
             },
             'warnings': {
-                'mean': 1.5,
-                'median': 0.6,
-                'std': 1.7,
+                'mean': 1.6,
+                'median': 0.75,
+                'std': 1.8,
             },
         },
     ]
