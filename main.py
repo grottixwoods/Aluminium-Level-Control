@@ -4,21 +4,33 @@ import threading
 
 from utils import *
 
+# Функция main(video_path, contours, video_save_path, is_visualized=False): основная функция обработки видеопотока.
+# video_path - путь к видеофайлу для анализа.
+# contours - словарь с контурами, содержащий информацию о контуре, его границах и предупреждениях.
+# video_save_path - путь для сохранения результирующего видеофайла.
+# is_visualized - флаг для отображения обработанного кадра в реальном времени (по умолчанию False).
+
 def main(video_path, contours, video_save_path, is_visualized=False):
+
+    # Инициализация видеопотока.
     cap = cv2.VideoCapture(video_path)
     frame_per_second = cap.get(cv2.CAP_PROP_FPS)
-
+    
+    # Инициализация записи видео, если указан путь для сохранения.
     if video_save_path:
         fourcc = cv2.VideoWriter_fourcc(*'MP4V')
         out_shape = int(cap.get(3)), int(cap.get(4))
         out = cv2.VideoWriter(video_save_path, fourcc, frame_per_second, out_shape, True)
-
+    
+    # Настройка шага кадров.
     frame_cur = 0
     frame_step = frame_per_second
 
+    # Инициализация списков для хранения цветов строк.
     past_rows_colors = [[], [], []]
     final_colors = [[], [], []]
 
+    # Основной цикл обработки кадров.
     while cap.isOpened():
         is_next, frame = cap.read()
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_cur)
@@ -26,6 +38,7 @@ def main(video_path, contours, video_save_path, is_visualized=False):
         if not is_next:
             break
 
+        # Пул потоков для анализа контуров.        
         pool = []
         for contour_index in contours.keys():
             pool.append(
@@ -38,7 +51,8 @@ def main(video_path, contours, video_save_path, is_visualized=False):
             t.start()
         for t in pool:
             t.join()
-
+        
+        # Визуализация и сохранение результатов анализа.
         if is_visualized or video_save_path:
             for contour_index, val in contours.items():
                 contour = val['contour']
@@ -48,6 +62,8 @@ def main(video_path, contours, video_save_path, is_visualized=False):
                 color = (0, 0, 255) if any(flags.values()) else (0, 255, 0)
                 test_pos_x = contour[:, 0].min()
                 test_pos_y = contour[:, 1].max()
+
+                # Вывод информации о контуре
                 text = f'{contour_index} | ' + ' | '.join([f'{k}: {v}' for k, v in flags.items()])
                 cv2.putText(
                     frame, text, (test_pos_x, test_pos_y + 30),
@@ -60,7 +76,11 @@ def main(video_path, contours, video_save_path, is_visualized=False):
                     cv2.FONT_HERSHEY_SIMPLEX,
                     1, color, 2
                 )
+
+                # Визуализация контура.
                 cv2.drawContours(frame, [contour], 0, color, 2)
+
+                # Разделение высоты контура на 4 региона.
                 height = np.max(contour[:, 1]) - np.min(contour[:, 1])
                 height_per_region = height // 4
                 regions = []
@@ -72,19 +92,24 @@ def main(video_path, contours, video_save_path, is_visualized=False):
                                                    [np.max(contour[:, 0]), y_max],
                                                    [np.min(contour[:, 0]), y_max]])
                     regions.append(region_coordinates)
+
+                # Разделение флагов строк на 4 региона.
                 rows_flags = np.array_split(flags_cell, 4)
                 colors = {'red': (0, 0, 255), 'yellow': (0, 255, 255), 'green': (0, 255, 0)}
                 color_rows = [None, None, None, None]
                 for i, region in enumerate(regions):
                     region += np.array([[100, 200], [100, 200], [100, 200], [100, 200]])
                     percentage = sum(rows_flags[i]) / len(rows_flags[i])
+
+                    # Определение цвета для региона.
                     if percentage >= 0.6:
                         for j, color_row in enumerate(color_rows):
                             if j >= i:
                                 color_rows[j] = colors['red']
                     elif color_rows[i] != colors['red']:
                         color_rows[i] = colors['green']
-
+                    
+                    # Заполнение региона цветом.
                     if i == 3:
                         past_rows_colors[contour_index].append(color_rows)
                         if len(past_rows_colors[contour_index]) == 10:
@@ -105,23 +130,30 @@ def main(video_path, contours, video_save_path, is_visualized=False):
                                     final_colors[contour_index].append(colors['green'])
                             final_colors[contour_index] = final_colors[contour_index][-4:]
 
+                    # Заполнение региона цветом в зависимости от истории.
                     if final_colors[contour_index]:
                         cv2.fillPoly(frame, [region], color=final_colors[contour_index][i])
                         cv2.drawContours(frame, [region], 0, (255, 255, 255), 2)
-
+                
+            # Визуализация кадра и обработка клавиши "q" для выхода.
             if is_visualized:
                 cv2.imshow('Frame', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+
+            # Сохранение кадра в видео, если указан путь.
             if video_save_path:
                 out.write(frame)
 
+    # Завершение процессов и закрытие окон. 
     cap.release()
     if video_save_path:
         out.release()
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
+
+    # Определение переменных (требует тонкой настройки под конкретную камеру)
     contours = [
         {
             'contour': np.array([[1155, 660], [1412, 625], [1412, 677], [1162, 715]]),
@@ -168,5 +200,5 @@ if __name__ == '__main__':
         video_path='2023-07-12_03_49_11_03_55_00_4306a3db50ad28fc.mp4',
         contours=contours,
         is_visualized=True,
-        video_save_path='out_2023-07-12_03:49:11_03:55:00_4306a3db50ad28fc.mp4',
+        video_save_path='output.mp4',
     )

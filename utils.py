@@ -1,7 +1,11 @@
 import cv2
 import numpy as np
 
-def crop(img, pts):
+# Функция crop(img, pts): обрезает изображение по указанным координатам pts.
+# img - изображение, pts - координаты для обрезки.
+# Возвращает обрезанное изображение.
+
+def crop(img, pts): 
     mask = np.zeros(img.shape[:2], dtype=np.uint8)
     cv2.drawContours(mask, [pts], -1, (255, 255, 255), -1, cv2.LINE_AA)
     res = cv2.bitwise_and(img, img, mask=mask)
@@ -9,7 +13,11 @@ def crop(img, pts):
     cropped = res[rect[1]:rect[1] + rect[3], rect[0]:rect[0] + rect[2]]
     return cropped
 
-def order_points(pts):
+# Функция order_points(pts): упорядочивает координаты pts так, чтобы они следовали в порядке "влево-вверх, вправо-вниз".
+# pts - массив с координатами четырехугольника.
+# Возвращает упорядоченный массив координат.
+
+def order_points(pts): 
     rect = np.zeros((4, 2), dtype="float32")
     s = pts.sum(axis=1)
     rect[0] = pts[np.argmin(s)]
@@ -18,6 +26,10 @@ def order_points(pts):
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
     return rect
+
+# Функция rotate(img, pts): перспективное преобразование изображения в вид прямоугольника, ограниченного pts.
+# img - изображение, pts - координаты четырехугольника.
+# Возвращает изображение с правильной перспективой.
 
 def rotate(img, pts):
     rect = order_points(pts)
@@ -37,6 +49,12 @@ def rotate(img, pts):
     warped = cv2.warpPerspective(img, M, (maxWidth, maxHeight))
     return warped
 
+
+# Функция calibrate_frame(frame, target_mean, target_std): калибрует изображение, изменяя яркость и контраст.
+# (функция применима к потоковому видео с камеры, для которой требуется калибровка.)
+# frame - изображение, target_mean - целевое среднее значение яркости, target_std - целевое стандартное отклонение яркости.
+# Возвращает калиброванное изображение. 
+
 def calibrate_frame(frame, target_mean, target_std):
     gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     mean_val = np.mean(gray_frame)
@@ -46,6 +64,11 @@ def calibrate_frame(frame, target_mean, target_std):
     adjusted_frame = cv2.convertScaleAbs(gray_frame, alpha=contrast, beta=brightness)
     calibrated_frame = cv2.cvtColor(adjusted_frame, cv2.COLOR_GRAY2BGR)
     return calibrated_frame
+
+# Функция quantization(img, clusters=8, rounds=1): применяет квантование цветов изображения с использованием k-средних.
+# (Эксперементальная функция, необходимость применения стоит рассматривать после получения потокового видео с камеры)
+# img - изображение, clusters - количество кластеров для квантования, rounds - количество итераций k-средних.
+# Возвращает изображение после квантования.
 
 def quantization(img, clusters=8, rounds=1):
     samples = img.reshape(-1, 3).astype(np.float32)
@@ -57,6 +80,10 @@ def quantization(img, clusters=8, rounds=1):
     centers = np.uint8(centers)
     res = centers[labels.flatten()]
     return res.reshape(img.shape)
+
+# Функция grid(img, cells_in_height, cells_in_width): разбивает изображение на ячейки заданного размера.
+# img - изображение, cells_in_height - количество ячеек в высоте, cells_in_width - количество ячеек в ширине.
+# Возвращает словарь, где ключи - координаты ячеек, значения - изображения ячеек.
 
 def grid(img, cells_in_height, cells_in_width):
     h, w = img.shape[:2]
@@ -70,6 +97,10 @@ def grid(img, cells_in_height, cells_in_width):
             tiles[(i, j)] = tile_img
     return tiles
 
+# Функция calculate_statistics_in_tiles(tiles): вычисляет статистику (среднее, стандартное отклонение, медиану) для каждой ячейки.
+# tiles - словарь с координатами и изображениями ячеек.
+# Возвращает словарь с результатами статистики для каждой ячейки.
+
 def calculate_statistics_in_tiles(tiles):
     stats_element = {}
     for coords, tile_img in tiles.items():
@@ -78,6 +109,10 @@ def calculate_statistics_in_tiles(tiles):
         median_value = round(np.median(tile_img), 2)
         stats_element[coords] = mean_value, std_value, median_value
     return stats_element
+
+# Функция calculate_overall_statistics(stats_element): вычисляет общую статистику по всем значениям из словаря статистики.
+# stats_element - словарь со статистикой для каждой ячейки.
+# Возвращает словарь с общей статистикой.
 
 def calculate_overall_statistics(stats_element):
     all_mean_values, all_std_values, all_median_values, all_coords = [], [], [], []
@@ -101,6 +136,10 @@ def calculate_overall_statistics(stats_element):
         'all_coords': all_coords
     }
 
+# Функция detect_outliers_in_rows(stats_element): находит и нормализует выбросы в каждой строке изображения.
+# stats_element - словарь со статистикой для каждой ячейки.
+# Возвращает словарь с результатами после нормализации выбросов.
+
 def detect_outliers_in_rows(stats_element):
     grouped_rows = {}
     for coord, values in stats_element.items():
@@ -108,6 +147,10 @@ def detect_outliers_in_rows(stats_element):
         if x_coord not in grouped_rows:
             grouped_rows[x_coord] = []
         grouped_rows[x_coord].append((coord, values))
+        
+    # Функция find_and_normalize_outliers(row): находит и нормализует выбросы в каждой строке изображения.
+    # row - список кортежей с координатами и значениями статистики для каждой ячейки в строке.
+    # Нормализует значения и обновляет статистику в словаре stats_element. Выводит предупреждения о выбросах и регрессах.
 
     def find_and_normalize_outliers(row):
         mean_values = [value[0] for _, value in row]
@@ -147,6 +190,10 @@ def detect_outliers_in_rows(stats_element):
 
     return stats_element
 
+# Функция grid_visualiser(finally_statistics, bnds, wrns): визуализирует результаты статистики и проверяет предупреждения.
+# finally_statistics - общая статистика, bnds - границы значений, wrns - уровни предупреждений.
+# Возвращает словарь с визуализированными данными.
+
 def grid_visualiser(finally_statistics, bnds, wrns):
     all_mean_val, all_std_val, all_median_val, all_coords, is_warning_cell = [], [], [], [], []
 
@@ -176,20 +223,38 @@ def grid_visualiser(finally_statistics, bnds, wrns):
         'is_warning_cell': is_warning_cell,
     }
 
+# Функция sf(x, bnds, name): нормализует значение x[name] в пределах границ bnds[name].
+# x - словарь с данными, bnds - границы значений, name - ключ для значения в словаре.
+# Возвращает нормализованное значение.
+
 def sf(x, bnds, name):
     return (x[name] - bnds[name][0]) / (bnds[name][1] - bnds[name][0])
+
+# Функция sf_cell(bnds, val, name): нормализует значение val в пределах границ bnds[name].
+# bnds - границы значений, val - значение, name - ключ для значения в границах.
+# Возвращает нормализованное значение.
 
 def sf_cell(bnds, val, name):
     return (val - bnds[name][0]) / (bnds[name][1] - bnds[name][0])
 
+# Функция warning(): выводит предупреждение о превышении уровня.
+
 def warning():
     print(f'[WARNING]: Exceeding the level')
+
+# Функция warning2(outlier_coord): выводит предупреждение о выбросе в указанных координатах.
 
 def warning2(outlier_coord):
     print(f"[OUTLIER]:  in coordinate: {outlier_coord}")
 
+# Функция warning3(outlier_coord): выводит предупреждение о регрессе в указанных координатах.
+
 def warning3(outlier_coord):
     print(f"[RECESSION]: in coordinate: {outlier_coord}")
+
+# Функция check(img, cnts, cnt_idx): выполняет анализ контура на изображении с использованием предоставленных параметров.
+# img - изображение, cnts - список контуров с параметрами, cnt_idx - индекс контура для анализа.
+# Результат анализа записывается в структуру контура в виде флагов и значений.
 
 def check(img, cnts, cnt_idx):
     cnt = cnts[cnt_idx]['contour']
