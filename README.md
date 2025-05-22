@@ -3,8 +3,9 @@
 Данный проект нацелен на решение проблемы определения уровня металла в ваннах,
 посредством использования технологий компьютерного зрения (CV).
 
-![App Screenshot](https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExNmJpcDJwZXdiY3RmNDZiNW5heWs2ZXNxZXBoNHhiOXhlNWN0ejBpdiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Z6BKEgN4oJx7XRLInC/giphy.gif)
-
+<p align="center">
+  <img src="https://github.com/grottixwoods/aluminium/blob/main/cvalum.gif?raw=true" alt="App Screenshot">
+</p>
 
 ## О проекте
 
