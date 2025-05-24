@@ -4,7 +4,7 @@
 посредством использования технологий компьютерного зрения (CV).
 
 <p align="center">
-  <img src="https://github.com/grottixwoods/aluminium/blob/main/cvalum.gif?raw=true" alt="App Screenshot">
+  <img src="https://github.com/grottixwoods/Aluminium-Level-Control/blob/main/assets/cvalum.gif?raw=true">
 </p>
 
 ## О проекте
